@@ -1,0 +1,397 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Gatehouse</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: split screen. Left rail explains the gate; right pane holds one view at a time (login, register, dashboard). */
+:root {
+  --bg: #eef1f0;
+  --surface: #fbfcfb;
+  --ink: #14211f;
+  --muted: #5a6b68;
+  --line: #d3dbd9;
+  --accent: #0f6b5c;
+  --accent-ink: #ffffff;
+  --rail: #0f2a26;
+  --rail-ink: #dcebe7;
+  --good: #1f7a45;
+  --bad: #b3261e;
+  --bad-bg: #fbe9e7;
+  --good-bg: #e3f3ea;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c1513; --surface: #131f1c; --ink: #e4efec; --muted: #8fa5a0; --line: #263733;
+    --accent: #4fc3a8; --accent-ink: #06201a; --rail: #081310; --rail-ink: #cfe3de;
+    --good: #5bd08c; --bad: #ff8a80; --bad-bg: #3a1c1a; --good-bg: #17332a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c1513; --surface: #131f1c; --ink: #e4efec; --muted: #8fa5a0; --line: #263733;
+  --accent: #4fc3a8; --accent-ink: #06201a; --rail: #081310; --rail-ink: #cfe3de;
+  --good: #5bd08c; --bad: #ff8a80; --bad-bg: #3a1c1a; --good-bg: #17332a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.shell { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); min-height: 100vh; }
+.rail { background: var(--rail); color: var(--rail-ink); padding: 40px 32px; display: flex; flex-direction: column; gap: 28px; }
+.brand { font-family: var(--font-display); font-weight: 700; font-size: 28px; letter-spacing: -0.01em; }
+.brand small { display: block; font-family: var(--font-mono); font-weight: 400; font-size: 12px; opacity: .7; letter-spacing: .08em; text-transform: uppercase; margin-top: 4px; }
+.rail p { margin: 0; max-width: 38ch; opacity: .88; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 14px; }
+.checks li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; opacity: .85; }
+.checks li::before { content: ""; width: 8px; height: 8px; margin-top: 7px; background: var(--accent); border-radius: 1px; transform: rotate(45deg); }
+.pane { padding: 40px 32px; display: flex; align-items: center; justify-content: center; min-width: 0; }
+.card { width: 100%; max-width: 440px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 28px; display: grid; gap: 18px; }
+.card h1 { font-family: var(--font-display); font-size: 26px; line-height: 1.15; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.sub { color: var(--muted); margin: 0; }
+form { display: grid; gap: 14px; }
+label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px; }
+.field { min-width: 0; }
+input[type=text], input[type=password] {
+  width: 100%; font: inherit; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 6px; padding: 11px 12px;
+}
+input:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[aria-invalid="true"] { border-color: var(--bad); }
+.pw { position: relative; }
+.pw input { padding-right: 64px; }
+.toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: 0; color: var(--accent); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 6px 8px; border-radius: 4px; }
+.btn { font: inherit; font-weight: 600; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 6px; padding: 12px 16px; cursor: pointer; }
+.btn:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: .6; cursor: wait; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.msg { border-radius: 6px; padding: 10px 12px; font-size: 14px; }
+.msg.err { background: var(--bad-bg); color: var(--bad); }
+.msg.ok { background: var(--good-bg); color: var(--good); }
+.fielderr { color: var(--bad); font-size: 13px; margin-top: 6px; }
+.rules { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.rules li::before { content: "○ "; }
+.rules li.pass { color: var(--good); }
+.rules li.pass::before { content: "● "; }
+.alt { font-size: 14px; color: var(--muted); margin: 0; }
+.alt a { color: var(--accent); font-weight: 600; }
+.dash { display: grid; gap: 18px; }
+.dash dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 16px; font-size: 14px; }
+.dash dt { color: var(--muted); }
+.dash dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.mono { font-family: var(--font-mono); font-size: 12.5px; }
+.record { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 12px; overflow-x: auto; }
+.record h2 { font-size: 12px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; font-weight: 500; }
+.record pre { margin: 0; font-family: var(--font-mono); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.themebtn { position: fixed; right: 12px; top: calc(env(safe-area-inset-top, 0px) + 8px); z-index: 5; font: inherit; font-size: 12px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; cursor: pointer; }
+@media (max-width: 760px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .rail { padding: 28px 16px; gap: 16px; }
+  .checks { display: none; }
+  .pane { padding: 20px 16px 40px; }
+  .card { padding: 20px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .card { animation: rise .25s ease-out; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+</style>
+
+<button class="themebtn" id="themebtn" type="button" aria-label="Switch colour theme">Theme</button>
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">Gatehouse<small>Client-side auth demo</small></div>
+    <p>Register an account, sign in, and reach a page that only opens with a valid session. Everything runs in this browser.</p>
+    <ul class="checks">
+      <li>Passwords are salted and hashed with SHA-256 before storage. The plain text is never saved.</li>
+      <li>Sign-in errors never say which field was wrong.</li>
+      <li>Opening the dashboard without a session sends you back to sign in.</li>
+      <li>Sign out clears the session from localStorage.</li>
+    </ul>
+  </aside>
+
+  <main class="pane">
+    <!-- Login -->
+    <section class="card" id="view-login" hidden aria-labelledby="t-login">
+      <div>
+        <h1 id="t-login">Sign in</h1>
+        <p class="sub">Use the username or email you registered with.</p>
+      </div>
+      <div id="login-notice" class="msg ok" role="status" hidden></div>
+      <div id="login-error" class="msg err" role="alert" hidden></div>
+      <form id="login-form" novalidate>
+        <div class="field">
+          <label for="login-id">Username or email</label>
+          <input type="text" id="login-id" autocomplete="username" autocapitalize="none" spellcheck="false">
+          <div class="fielderr" id="login-id-err" hidden></div>
+        </div>
+        <div class="field">
+          <label for="login-pw">Password</label>
+          <div class="pw">
+            <input type="password" id="login-pw" autocomplete="current-password">
+            <button type="button" class="toggle" data-for="login-pw">Show</button>
+          </div>
+          <div class="fielderr" id="login-pw-err" hidden></div>
+        </div>
+        <button class="btn" type="submit" id="login-btn">Login</button>
+      </form>
+      <p class="alt">No account yet? <a href="#register">Create one</a></p>
+    </section>
+
+    <!-- Register -->
+    <section class="card" id="view-register" hidden aria-labelledby="t-reg">
+      <div>
+        <h1 id="t-reg">Create an account</h1>
+        <p class="sub">Pick a username or use your email address.</p>
+      </div>
+      <div id="reg-error" class="msg err" role="alert" hidden></div>
+      <form id="reg-form" novalidate>
+        <div class="field">
+          <label for="reg-id">Username or email</label>
+          <input type="text" id="reg-id" autocomplete="username" autocapitalize="none" spellcheck="false">
+          <div class="fielderr" id="reg-id-err" hidden></div>
+        </div>
+        <div class="field">
+          <label for="reg-pw">Password</label>
+          <div class="pw">
+            <input type="password" id="reg-pw" autocomplete="new-password">
+            <button type="button" class="toggle" data-for="reg-pw">Show</button>
+          </div>
+          <ul class="rules" id="rules" aria-live="polite">
+            <li data-rule="len">At least 8 characters</li>
+            <li data-rule="num">At least 1 number</li>
+          </ul>
+          <div class="fielderr" id="reg-pw-err" hidden></div>
+        </div>
+        <button class="btn" type="submit" id="reg-btn">Register</button>
+      </form>
+      <p class="alt">Already registered? <a href="#login">Sign in</a></p>
+    </section>
+
+    <!-- Dashboard (protected) -->
+    <section class="card dash" id="view-dashboard" hidden aria-labelledby="t-dash">
+      <div>
+        <h1 id="t-dash">Welcome, <span id="who"></span></h1>
+        <p class="sub">You are signed in. This page is only reachable with a valid session.</p>
+      </div>
+      <dl>
+        <dt>Account created</dt><dd id="d-created"></dd>
+        <dt>Session started</dt><dd id="d-session"></dd>
+        <dt>Registered accounts</dt><dd id="d-count"></dd>
+      </dl>
+      <div class="record">
+        <h2>Your stored record</h2>
+        <pre id="d-record"></pre>
+      </div>
+      <button class="btn ghost" type="button" id="logout">Logout</button>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  var USERS_KEY = "gatehouse.users";
+  var SESSION_KEY = "gatehouse.session";
+  var mem = {};
+
+  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) { mem[k] = v; } }
+  function load(k) { try { var v = localStorage.getItem(k); return v === null ? (mem[k] || null) : v; } catch (e) { return mem[k] || null; } }
+  function drop(k) { try { localStorage.removeItem(k); } catch (e) {} delete mem[k]; }
+
+  function getUsers() { try { return JSON.parse(load(USERS_KEY) || "{}"); } catch (e) { return {}; } }
+  function saveUsers(u) { store(USERS_KEY, JSON.stringify(u)); }
+  function getSession() { try { return JSON.parse(load(SESSION_KEY) || "null"); } catch (e) { return null; } }
+
+  /* ---------- SHA-256 ---------- */
+  function toHex(buf) { return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ("0" + b.toString(16)).slice(-2); }).join(""); }
+  function sha256Fallback(bytes) {
+    var K = [], H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+    var p = [], c = 2, i, j;
+    while (K.length < 64) { var prime = true; for (j = 2; j * j <= c; j++) if (c % j === 0) { prime = false; break; } if (prime) K.push((Math.pow(c, 1/3) % 1) * 4294967296 | 0); c++; }
+    var l = bytes.length, w = [];
+    var msg = Array.prototype.slice.call(bytes); msg.push(0x80);
+    while (msg.length % 64 !== 56) msg.push(0);
+    var bits = l * 8; for (i = 7; i >= 0; i--) msg.push(i > 3 ? 0 : (bits >>> (i * 8)) & 255);
+    function rr(x, n) { return (x >>> n) | (x << (32 - n)); }
+    for (i = 0; i < msg.length; i += 64) {
+      for (j = 0; j < 16; j++) w[j] = (msg[i+4*j] << 24) | (msg[i+4*j+1] << 16) | (msg[i+4*j+2] << 8) | msg[i+4*j+3];
+      for (j = 16; j < 64; j++) { var s0 = rr(w[j-15],7) ^ rr(w[j-15],18) ^ (w[j-15] >>> 3), s1 = rr(w[j-2],17) ^ rr(w[j-2],19) ^ (w[j-2] >>> 10); w[j] = (w[j-16] + s0 + w[j-7] + s1) | 0; }
+      var a = H[0], b = H[1], cc = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+      for (j = 0; j < 64; j++) {
+        var S1 = rr(e,6) ^ rr(e,11) ^ rr(e,25), ch = (e & f) ^ (~e & g), t1 = (h + S1 + ch + K[j] + w[j]) | 0;
+        var S0 = rr(a,2) ^ rr(a,13) ^ rr(a,22), mj = (a & b) ^ (a & cc) ^ (b & cc), t2 = (S0 + mj) | 0;
+        h = g; g = f; f = e; e = (d + t1) | 0; d = cc; cc = b; b = a; a = (t1 + t2) | 0;
+      }
+      H = [(H[0]+a)|0,(H[1]+b)|0,(H[2]+cc)|0,(H[3]+d)|0,(H[4]+e)|0,(H[5]+f)|0,(H[6]+g)|0,(H[7]+h)|0];
+    }
+    return H.map(function (x) { return ("00000000" + (x >>> 0).toString(16)).slice(-8); }).join("");
+  }
+  function sha256(text) {
+    var bytes = new TextEncoder().encode(text);
+    if (window.crypto && crypto.subtle) {
+      return crypto.subtle.digest("SHA-256", bytes).then(toHex).catch(function () { return sha256Fallback(bytes); });
+    }
+    return Promise.resolve(sha256Fallback(bytes));
+  }
+  function randomHex(n) {
+    var a = new Uint8Array(n);
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(a);
+    else for (var i = 0; i < n; i++) a[i] = Math.floor(Math.random() * 256);
+    return toHex(a);
+  }
+  /* Salted hash, repeated to slow guessing slightly. */
+  function hashPassword(pw, salt) {
+    var p = sha256(salt + ":" + pw);
+    for (var i = 0; i < 999; i++) p = p.then(function (h) { return sha256(h + ":" + salt); });
+    return p;
+  }
+
+  /* ---------- helpers ---------- */
+  function $(id) { return document.getElementById(id); }
+  function show(el, text) { el.textContent = text; el.hidden = false; }
+  function hide(el) { el.hidden = true; }
+  function norm(id) { return id.trim().toLowerCase(); }
+  function fmt(ts) { try { return new Date(ts).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }); } catch (e) { return String(ts); } }
+  function setInvalid(input, errEl, text) {
+    if (text) { show(errEl, text); input.setAttribute("aria-invalid", "true"); }
+    else { hide(errEl); input.removeAttribute("aria-invalid"); }
+  }
+  function pwRules(pw) { return { len: pw.length >= 8, num: /\d/.test(pw) }; }
+
+  /* ---------- routing with a session guard ---------- */
+  var views = ["login", "register", "dashboard"];
+  var flash = null;
+  function go(name) { if (location.hash.slice(1) === name) route(); else location.hash = name; }
+  function route() {
+    var name = location.hash.slice(1);
+    if (views.indexOf(name) < 0) name = "login";
+    var session = getSession();
+    var users = getUsers();
+    var valid = session && users[session.id];
+    if (session && !valid) { drop(SESSION_KEY); session = null; }
+    if (name === "dashboard" && !session) {
+      flash = "Please sign in to open the dashboard.";
+      name = "login";
+      history.replaceState(null, "", "#login");
+    } else if (name !== "dashboard" && session) {
+      name = "dashboard";
+      history.replaceState(null, "", "#dashboard");
+    }
+    views.forEach(function (v) { $("view-" + v).hidden = v !== name; });
+    if (name === "login") {
+      hide($("login-error"));
+      if (flash) { show($("login-notice"), flash); flash = null; } else hide($("login-notice"));
+    }
+    if (name === "dashboard") renderDashboard(session, users[session.id]);
+    var h = document.querySelector("#view-" + name + " h1");
+    if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
+  }
+  window.addEventListener("hashchange", route);
+
+  function renderDashboard(session, user) {
+    $("who").textContent = user.display;
+    $("d-created").textContent = fmt(user.created);
+    $("d-session").textContent = fmt(session.at);
+    $("d-count").textContent = Object.keys(getUsers()).length;
+    $("d-record").textContent = JSON.stringify({
+      user: user.display,
+      salt: user.salt,
+      passwordHash: user.hash.slice(0, 24) + "…"
+    }, null, 2);
+  }
+
+  /* ---------- register ---------- */
+  var regId = $("reg-id"), regPw = $("reg-pw");
+  regPw.addEventListener("input", function () {
+    var r = pwRules(regPw.value);
+    document.querySelectorAll("#rules li").forEach(function (li) { li.classList.toggle("pass", !!r[li.dataset.rule]); });
+    if (regPw.getAttribute("aria-invalid")) setInvalid(regPw, $("reg-pw-err"), null);
+  });
+  regId.addEventListener("input", function () { setInvalid(regId, $("reg-id-err"), null); hide($("reg-error")); });
+
+  $("reg-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    hide($("reg-error"));
+    var display = regId.value.trim(), pw = regPw.value, ok = true;
+    if (!display) { setInvalid(regId, $("reg-id-err"), "Enter a username or email."); ok = false; }
+    else if (/\s/.test(display)) { setInvalid(regId, $("reg-id-err"), "Remove the spaces from your username or email."); ok = false; }
+    else setInvalid(regId, $("reg-id-err"), null);
+    var r = pwRules(pw);
+    if (!pw) { setInvalid(regPw, $("reg-pw-err"), "Enter a password."); ok = false; }
+    else if (!r.len || !r.num) { setInvalid(regPw, $("reg-pw-err"), "Password needs at least 8 characters and 1 number."); ok = false; }
+    else setInvalid(regPw, $("reg-pw-err"), null);
+    if (!ok) return;
+
+    var id = norm(display), users = getUsers();
+    if (users[id]) { show($("reg-error"), "An account with that username or email already exists. Sign in instead."); return; }
+
+    var btn = $("reg-btn"); btn.disabled = true;
+    var salt = randomHex(16);
+    hashPassword(pw, salt).then(function (hash) {
+      var u = getUsers();
+      if (u[id]) { show($("reg-error"), "An account with that username or email already exists. Sign in instead."); return; }
+      u[id] = { display: display, salt: salt, hash: hash, created: Date.now() };
+      saveUsers(u);
+      regId.value = ""; regPw.value = "";
+      document.querySelectorAll("#rules li").forEach(function (li) { li.classList.remove("pass"); });
+      flash = "Account created. Sign in to continue.";
+      go("login");
+    }).finally(function () { btn.disabled = false; });
+  });
+
+  /* ---------- login ---------- */
+  var loginId = $("login-id"), loginPw = $("login-pw");
+  loginId.addEventListener("input", function () { setInvalid(loginId, $("login-id-err"), null); });
+  loginPw.addEventListener("input", function () { setInvalid(loginPw, $("login-pw-err"), null); });
+
+  $("login-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    hide($("login-error")); hide($("login-notice"));
+    var raw = loginId.value, pw = loginPw.value, ok = true;
+    if (!raw.trim()) { setInvalid(loginId, $("login-id-err"), "Enter your username or email."); ok = false; } else setInvalid(loginId, $("login-id-err"), null);
+    if (!pw) { setInvalid(loginPw, $("login-pw-err"), "Enter your password."); ok = false; } else setInvalid(loginPw, $("login-pw-err"), null);
+    if (!ok) return;
+
+    var id = norm(raw), user = getUsers()[id];
+    var btn = $("login-btn"); btn.disabled = true;
+    /* Hash even when the user is unknown so both failures take the same time and give the same message. */
+    hashPassword(pw, user ? user.salt : "0".repeat(32)).then(function (hash) {
+      if (user && hash === user.hash) {
+        store(SESSION_KEY, JSON.stringify({ id: id, at: Date.now(), token: randomHex(16) }));
+        loginId.value = ""; loginPw.value = "";
+        go("dashboard");
+      } else {
+        show($("login-error"), "Incorrect username/email or password.");
+        loginPw.value = "";
+      }
+    }).finally(function () { btn.disabled = false; });
+  });
+
+  /* ---------- logout ---------- */
+  $("logout").addEventListener("click", function () {
+    drop(SESSION_KEY);
+    flash = "You have been signed out.";
+    go("login");
+  });
+
+  /* ---------- show/hide password ---------- */
+  document.querySelectorAll(".toggle").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var inp = $(b.dataset.for), showing = inp.type === "text";
+      inp.type = showing ? "password" : "text";
+      b.textContent = showing ? "Show" : "Hide";
+    });
+  });
+
+  /* ---------- theme ---------- */
+  $("themebtn").addEventListener("click", function () {
+    var root = document.documentElement, cur = root.getAttribute("data-theme");
+    var dark = cur ? cur === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    root.setAttribute("data-theme", dark ? "light" : "dark");
+  });
+
+  route();
+})();
+</script>
+
+</body></html>
