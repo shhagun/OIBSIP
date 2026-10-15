@@ -1,0 +1,324 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Daybook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: one narrow header and add-bar on top, then two lists (Pending | Completed) side by side, stacked on phones. */
+:root {
+  --bg: #eaeef4;
+  --surface: #ffffff;
+  --fg: #141b2d;
+  --muted: #5b657a;
+  --line: #d3dae6;
+  --accent: #2845d6;
+  --accent-fg: #ffffff;
+  --done: #0e7c66;
+  --danger: #b3261e;
+  --wash: #f3f6fb;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1422; --surface: #171e31; --fg: #e7ebf5; --muted: #98a2ba; --line: #2a3350;
+    --accent: #7c93ff; --accent-fg: #0f1422; --done: #4cc9a8; --danger: #ff8a80; --wash: #1c2540;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1422; --surface: #171e31; --fg: #e7ebf5; --muted: #98a2ba; --line: #2a3350;
+  --accent: #7c93ff; --accent-fg: #0f1422; --done: #4cc9a8; --danger: #ff8a80; --wash: #1c2540;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 var(--font-body);
+  padding-inline: 16px;
+  padding-block: 28px 48px;
+}
+.app { max-width: 960px; margin-inline: auto; display: grid; gap: 22px; }
+
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+h1 { font: 700 clamp(2rem, 6vw, 2.8rem)/1 var(--font-display); letter-spacing: -0.02em; margin: 0; }
+.today { font: 400 13px var(--font-mono); color: var(--muted); letter-spacing: 0.02em; }
+
+.add { display: flex; gap: 10px; flex-wrap: wrap; }
+.add input {
+  flex: 1 1 240px; min-width: 0;
+  font: inherit; color: var(--fg); background: var(--surface);
+  border: 1.5px solid var(--line); border-radius: 8px; padding: 12px 14px;
+}
+button { font: inherit; cursor: pointer; }
+.btn-primary {
+  background: var(--accent); color: var(--accent-fg); border: 0; border-radius: 8px;
+  padding: 12px 22px; font-weight: 600;
+}
+.btn-primary:hover { filter: brightness(1.08); }
+.hint { color: var(--danger); font-size: 13px; min-height: 1.2em; margin: -12px 0 -8px; }
+
+input:focus-visible, button:focus-visible, .check input:focus-visible + .box {
+  outline: 2.5px solid var(--accent); outline-offset: 2px;
+}
+
+.lists { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+@media (max-width: 720px) { .lists { grid-template-columns: minmax(0, 1fr); } }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 14px 16px; border-bottom: 1px solid var(--line);
+}
+.panel h2 { font: 600 1.15rem var(--font-display); margin: 0; }
+.count { font: 500 12px var(--font-mono); padding: 3px 9px; border-radius: 999px; background: var(--wash); color: var(--muted); }
+#pending-panel .count { color: var(--accent); }
+#done-panel .count { color: var(--done); }
+
+ul { list-style: none; margin: 0; padding: 0; }
+li.task { padding: 12px 16px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+li.task:last-child { border-bottom: 0; }
+
+.top { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; flex: none; padding-top: 1px; }
+.check input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.box {
+  width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--muted);
+  display: grid; place-items: center; background: var(--surface);
+}
+.box svg { width: 14px; height: 14px; opacity: 0; stroke: var(--surface); }
+.check input:checked + .box { background: var(--done); border-color: var(--done); }
+.check input:checked + .box svg { opacity: 1; }
+.check .lbl { font-size: 12px; font-weight: 500; color: var(--muted); }
+.text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.done .text { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--muted); }
+
+.bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding-left: 34px; }
+.meta { font: 400 11.5px/1.4 var(--font-mono); color: var(--muted); display: grid; gap: 1px; }
+.actions { display: flex; gap: 6px; }
+.small {
+  background: transparent; color: var(--fg); border: 1px solid var(--line); border-radius: 6px;
+  padding: 4px 11px; font-size: 13px; font-weight: 500;
+}
+.small:hover { background: var(--wash); }
+.small.del { color: var(--danger); }
+.small.save { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+.edit { flex: 1; min-width: 0; font: inherit; color: var(--fg); background: var(--surface); border: 1.5px solid var(--accent); border-radius: 6px; padding: 6px 10px; }
+
+.empty { padding: 30px 20px 34px; text-align: center; color: var(--muted); }
+.empty strong { display: block; color: var(--fg); font: 600 1.05rem var(--font-display); margin-bottom: 4px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  li.task { animation: in 0.18s ease-out; }
+  @keyframes in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+}
+</style>
+
+<main class="app">
+  <header>
+    <h1>Daybook</h1>
+    <div class="today" id="today"></div>
+  </header>
+
+  <form class="add" id="add-form" autocomplete="off">
+    <input id="new-task" type="text" maxlength="140" placeholder="What needs doing today?" aria-label="New task">
+    <button class="btn-primary" type="submit">Add Task</button>
+  </form>
+  <p class="hint" id="hint" role="status"></p>
+
+  <div class="lists">
+    <section class="panel" id="pending-panel" aria-labelledby="h-pending">
+      <div class="panel-head"><h2 id="h-pending">Pending Tasks</h2><span class="count" id="pending-count">0 pending</span></div>
+      <ul id="pending-list"></ul>
+    </section>
+    <section class="panel" id="done-panel" aria-labelledby="h-done">
+      <div class="panel-head"><h2 id="h-done">Completed Tasks</h2><span class="count" id="done-count">0 completed</span></div>
+      <ul id="done-list"></ul>
+    </section>
+  </div>
+</main>
+
+<script>
+(function () {
+  var KEY = "daybook.tasks.v1";
+  var tasks = [];
+  var editingId = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var pendingList = $("pending-list"), doneList = $("done-list");
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) { var parsed = JSON.parse(raw); if (Array.isArray(parsed)) return parsed; }
+    } catch (e) {}
+    return null;
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(tasks)); } catch (e) {} }
+
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  function fmt(ts) {
+    return new Date(ts).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true });
+  }
+
+  var CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 4.5"/></svg>';
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function buildTask(t) {
+    var done = t.completed != null;
+    var li = el("li", "task" + (done ? " done" : ""));
+    li.dataset.id = t.id;
+
+    var top = el("div", "top");
+    var label = el("label", "check");
+    var cb = el("input"); cb.type = "checkbox"; cb.checked = done; cb.dataset.act = "toggle";
+    cb.setAttribute("aria-label", done ? "Mark as pending" : "Mark complete");
+    var box = el("span", "box"); box.innerHTML = CHECK;
+    label.appendChild(cb); label.appendChild(box);
+    label.appendChild(el("span", "lbl", done ? "Done" : "Mark Complete"));
+    top.appendChild(label);
+
+    if (editingId === t.id) {
+      var inp = el("input", "edit"); inp.type = "text"; inp.maxLength = 140; inp.value = t.text;
+      inp.id = "edit-input"; inp.setAttribute("aria-label", "Edit task text");
+      top.appendChild(inp);
+    } else {
+      top.appendChild(el("span", "text", t.text));
+    }
+    li.appendChild(top);
+
+    var bottom = el("div", "bottom");
+    var meta = el("div", "meta");
+    meta.appendChild(el("span", null, "Added " + fmt(t.added)));
+    if (done) meta.appendChild(el("span", null, "Completed " + fmt(t.completed)));
+    bottom.appendChild(meta);
+
+    var actions = el("div", "actions");
+    function btn(label, act, cls) {
+      var b = el("button", "small" + (cls ? " " + cls : ""), label);
+      b.type = "button"; b.dataset.act = act; return b;
+    }
+    if (editingId === t.id) {
+      actions.appendChild(btn("Save", "save", "save"));
+      actions.appendChild(btn("Cancel", "cancel"));
+    } else {
+      actions.appendChild(btn("Edit", "edit"));
+      actions.appendChild(btn("Delete", "delete", "del"));
+    }
+    bottom.appendChild(actions);
+    li.appendChild(bottom);
+    return li;
+  }
+
+  function emptyState(title, body) {
+    var li = el("li", "empty");
+    li.appendChild(el("strong", null, title));
+    li.appendChild(document.createTextNode(body));
+    return li;
+  }
+
+  function render() {
+    var pending = tasks.filter(function (t) { return t.completed == null; });
+    var done = tasks.filter(function (t) { return t.completed != null; });
+    pending.sort(function (a, b) { return b.added - a.added; });
+    done.sort(function (a, b) { return b.completed - a.completed; });
+
+    $("pending-count").textContent = pending.length + " pending";
+    $("done-count").textContent = done.length + " completed";
+
+    pendingList.replaceChildren();
+    doneList.replaceChildren();
+    if (pending.length) pending.forEach(function (t) { pendingList.appendChild(buildTask(t)); });
+    else pendingList.appendChild(emptyState("All clear", "Nothing pending. Add a task above to get started."));
+    if (done.length) done.forEach(function (t) { doneList.appendChild(buildTask(t)); });
+    else doneList.appendChild(emptyState("Nothing finished yet", "Tick a task as complete and it will show up here."));
+
+    var ei = $("edit-input");
+    if (ei) { ei.focus(); ei.setSelectionRange(ei.value.length, ei.value.length); }
+  }
+
+  function find(id) { return tasks.filter(function (t) { return t.id === id; })[0]; }
+
+  function commitEdit(id) {
+    var inp = $("edit-input");
+    var val = inp ? inp.value.trim() : "";
+    var t = find(id);
+    if (!val) { inp.focus(); return; }
+    if (t) t.text = val;
+    editingId = null;
+    save(); render();
+  }
+
+  document.addEventListener("click", function (e) {
+    var target = e.target.closest("[data-act]");
+    if (!target || target.tagName === "INPUT") return;
+    var li = target.closest("li.task"); if (!li) return;
+    var id = li.dataset.id, act = target.dataset.act;
+    if (act === "edit") { editingId = id; render(); }
+    else if (act === "cancel") { editingId = null; render(); }
+    else if (act === "save") { commitEdit(id); }
+    else if (act === "delete") {
+      tasks = tasks.filter(function (t) { return t.id !== id; });
+      if (editingId === id) editingId = null;
+      save(); render();
+    }
+  });
+
+  document.addEventListener("change", function (e) {
+    var cb = e.target;
+    if (!cb.matches || !cb.matches('input[data-act="toggle"]')) return;
+    var t = find(cb.closest("li.task").dataset.id);
+    if (!t) return;
+    t.completed = cb.checked ? Date.now() : null;
+    save(); render();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.target.id !== "edit-input") return;
+    var id = e.target.closest("li.task").dataset.id;
+    if (e.key === "Enter") { e.preventDefault(); commitEdit(id); }
+    else if (e.key === "Escape") { editingId = null; render(); }
+  });
+
+  $("add-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var input = $("new-task"), hint = $("hint");
+    var val = input.value.trim();
+    if (!val) { hint.textContent = "Type a task before adding it."; input.focus(); return; }
+    hint.textContent = "";
+    tasks.push({ id: uid(), text: val, added: Date.now(), completed: null });
+    input.value = "";
+    save(); render(); input.focus();
+  });
+  $("new-task").addEventListener("input", function () { $("hint").textContent = ""; });
+
+  $("today").textContent = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+  var stored = load();
+  if (stored) {
+    tasks = stored;
+  } else {
+    var now = Date.now(), H = 3600000;
+    tasks = [
+      { id: uid(), text: "Review JavaScript DOM manipulation notes", added: now - 5 * H, completed: null },
+      { id: uid(), text: "Finish CSS layout practice exercise", added: now - 3 * H, completed: null },
+      { id: uid(), text: "Set up project folder and Git repo", added: now - 9 * H, completed: now - 7 * H }
+    ];
+    save();
+  }
+  render();
+})();
+</script>
+
+</body></html>
